@@ -172,6 +172,7 @@ stages:
     optional_tools:
       - video_selector
       - math_animate
+      - blender_scene
       - diagram_gen
       - code_snippet
       - music_gen
@@ -183,6 +184,7 @@ stages:
       - code_snippet
       - music_gen
       - math_animate
+      - blender_scene
     checkpoint_required: true
     human_approval_default: true
     review_focus:

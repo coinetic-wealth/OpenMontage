@@ -98,6 +98,7 @@ decision matrix and the list of features that stay Remotion-only in Phase 1.
 | HyperFrames composition structure (data-* timing, tracks, sub-compositions) | HyperFrames | `.agents/skills/hyperframes-core` |
 | Explicit Three.js world (terrain, regions, landmarks, camera path) | HyperFrames + `threejs_world` | `.agents/skills/threejs-world-generation` |
 | Detailed Blender world film (generated/catalog meshes, PBR, camera path) | Blender + FFmpeg packaging | `.agents/skills/3d-asset-generation` |
+| 3D data visual or hero 3D shot (animated 3D bars/candlesticks, coin stacks, lit product or logo shot, transparent 3D overlay) | Blender via `blender_scene` (agent-authored bpy), clip placed in the Remotion/HyperFrames composition | `.agents/skills/blender-bpy` |
 | HyperFrames creative direction (palette, type, narration, beat planning) | HyperFrames | `.agents/skills/hyperframes-creative` |
 | HyperFrames audio/media (TTS, BGM, SFX, transcription, captions, bg-removal) | HyperFrames | `.agents/skills/hyperframes-media` |
 | HyperFrames composition CLI work (lint/validate/inspect/snapshot/benchmark/render/lambda) | HyperFrames CLI 0.7+ | `.agents/skills/hyperframes-cli` |

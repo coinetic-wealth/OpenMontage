@@ -180,6 +180,7 @@ stages:
       - image_selector
       - video_selector
       - math_animate
+      - blender_scene
       - diagram_gen
       - code_snippet
       - threejs_world
@@ -194,6 +195,7 @@ stages:
       - image_selector
       - video_selector
       - math_animate
+      - blender_scene
       - diagram_gen
       - code_snippet
       - threejs_world

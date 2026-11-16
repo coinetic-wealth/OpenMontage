@@ -125,6 +125,7 @@ stages:
       - image_selector
       - video_selector
       - diagram_gen
+      - blender_scene
       - code_snippet
       - music_gen
       - audio_enhance
@@ -134,6 +135,7 @@ stages:
       - image_selector
       - video_selector
       - diagram_gen
+      - blender_scene
       - code_snippet
       - music_gen
       - audio_enhance

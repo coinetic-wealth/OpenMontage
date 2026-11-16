@@ -376,7 +376,10 @@ def setup_title(spec: dict, args: argparse.Namespace):
 
 def setup_render(args: argparse.Namespace):
     scene = bpy.context.scene
-    scene.render.engine = "BLENDER_EEVEE_NEXT"
+    try:
+        scene.render.engine = "BLENDER_EEVEE_NEXT"
+    except TypeError:  # Blender 5.x renamed the engine back to BLENDER_EEVEE
+        scene.render.engine = "BLENDER_EEVEE"
     scene.eevee.taa_render_samples = args.samples
     scene.render.resolution_x = args.width
     scene.render.resolution_y = args.height
