@@ -116,6 +116,7 @@ stages:
       - image_selector
       - audio_enhance
       - video_selector
+      - blender_scene
     tools_available:
       - heygen_avatar
       - talking_head
@@ -125,6 +126,7 @@ stages:
       - image_selector
       - audio_enhance
       - video_selector
+      - blender_scene
     checkpoint_required: true
     human_approval_default: true
     review_focus:

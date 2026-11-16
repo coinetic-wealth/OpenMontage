@@ -37,7 +37,10 @@ def find_blender() -> Path | None:
     if _PORTABLE_BLENDER.is_file():
         return _PORTABLE_BLENDER.resolve()
     discovered = shutil.which("blender")
-    return Path(discovered).resolve() if discovered else None
+    if discovered:
+        return Path(discovered).resolve()
+    mac_app = Path("/Applications/Blender.app/Contents/MacOS/Blender")
+    return mac_app if mac_app.is_file() else None
 
 
 def first_missing_frame(output_prefix: str | Path, start_frame: int, end_frame: int) -> int | None:
