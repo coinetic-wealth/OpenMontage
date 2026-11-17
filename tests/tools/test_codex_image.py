@@ -153,3 +153,36 @@ def test_rejects_masks():
 def test_instruction_forbids_rewriting():
     text = build_instruction("P", Path("/tmp/x.png"), "1024x1024", "transparent", 0)
     assert "exactly as written" in text and "transparent" in text
+
+
+def test_wrong_shape_is_cropped_to_requested_size(fake_codex, tmp_path):
+    fake_codex()  # fake always returns 1024x1536
+    out = tmp_path / "sq.png"
+    result = CodexImage().execute({"prompt": "p", "size": "1024x1024", "output_path": str(out)})
+    assert result.success, result.error
+    assert result.data["pixel_sizes"] == [[1024, 1024]]
+    assert result.data["generated_sizes"] == [[1024, 1536]]
+    assert "instead of 1024x1024" in result.data["warnings"][0]
+
+
+def test_fit_none_keeps_generated_shape(fake_codex, tmp_path):
+    fake_codex()
+    result = CodexImage().execute(
+        {"prompt": "p", "size": "1536x1024", "fit": "none", "output_path": str(tmp_path / "w.png")}
+    )
+    assert result.success, result.error
+    assert result.data["pixel_sizes"] == [[1024, 1536]]
+    assert result.data["warnings"]
+
+
+def test_fit_to_size_handles_real_codex_shape():
+    from PIL import Image
+    from tools.graphics.codex_image import fit_to_size
+
+    assert fit_to_size(Image.new("RGB", (1199, 1312)), (1024, 1536)).size == (1024, 1536)
+    assert fit_to_size(Image.new("RGB", (1312, 1199)), (1024, 1536)).size == (1024, 1536)
+
+
+def test_instruction_names_the_aspect():
+    text = build_instruction("P", Path("/tmp/x.png"), "1024x1536", None, 0)
+    assert "portrait 2:3" in text

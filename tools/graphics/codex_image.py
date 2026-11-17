@@ -65,6 +65,42 @@ def codex_home() -> Path:
     return Path(os.environ.get("CODEX_HOME") or Path.home() / ".codex")
 
 
+def _parse_size(size: str | None) -> tuple[int, int] | None:
+    if not size or "x" not in size:
+        return None
+    w, h = size.lower().split("x", 1)
+    return int(w), int(h)
+
+
+def _aspect_words(size: str) -> str:
+    w, h = _parse_size(size) or (1, 1)
+    if w == h:
+        return "square 1:1"
+    if w > h:
+        return "landscape 3:2, wider than tall" if (w, h) == (1536, 1024) else "landscape"
+    return "portrait 2:3, taller than wide" if (w, h) == (1024, 1536) else "portrait"
+
+
+def fit_to_size(img, target: tuple[int, int]):
+    """Centre-crop img to the target aspect ratio, then resize to target."""
+    from PIL import Image
+
+    tw, th = target
+    w, h = img.size
+    if (w, h) == (tw, th):
+        return img
+    target_ratio, ratio = tw / th, w / h
+    if ratio > target_ratio:  # too wide: trim the sides
+        new_w = round(h * target_ratio)
+        left = (w - new_w) // 2
+        img = img.crop((left, 0, left + new_w, h))
+    elif ratio < target_ratio:  # too tall: trim top and bottom
+        new_h = round(w / target_ratio)
+        top = (h - new_h) // 2
+        img = img.crop((0, top, w, top + new_h))
+    return img.resize((tw, th), Image.LANCZOS)
+
+
 def build_instruction(
     prompt: str,
     target: Path,
@@ -82,7 +118,11 @@ def build_instruction(
         "already says everything the image needs.",
     ]
     if size and size != "auto":
-        lines.append(f"Image size: {size} pixels (width x height).")
+        lines.append(
+            f"Image size: {size} pixels (width x height), {_aspect_words(size)}. "
+            "If the image tool takes a size or aspect setting, set it to this; "
+            "the frame shape matters for the video layout."
+        )
     if background == "transparent":
         lines.append("Use a transparent background.")
     if reference_count:
@@ -172,6 +212,12 @@ class CodexImage(BaseTool):
                 "maxItems": 16,
             },
             "background": {"type": "string", "enum": ["auto", "opaque", "transparent"]},
+            "fit": {
+                "type": "string",
+                "enum": ["crop", "none"],
+                "default": "crop",
+                "description": "If Codex returns another frame shape: crop = centre-crop and resize to size; none = keep as generated.",
+            },
             "timeout_seconds": {"type": "integer", "minimum": 60, "default": 600},
         },
     }
@@ -188,6 +234,7 @@ class CodexImage(BaseTool):
         "image_paths",
         "background",
         "output_format",
+        "fit",
         "n",
     ]
     side_effects = [
@@ -260,24 +307,45 @@ class CodexImage(BaseTool):
         return max(fresh, key=lambda p: p.stat().st_mtime) if fresh else None
 
     @staticmethod
-    def _finalize(src: Path, dest: Path, fmt: str) -> tuple[int, int] | None:
-        """Write src to dest in the requested format; return its pixel size."""
+    def _finalize(
+        src: Path, dest: Path, fmt: str, size: str | None, fit: str
+    ) -> dict[str, Any]:
+        """Write src to dest in the requested format and frame size.
+
+        Codex treats the size as a request, not a setting, and sometimes
+        returns another shape. With fit="crop" the image is centre-cropped to
+        the requested aspect ratio and resized, and the mismatch is reported.
+        """
         dest.parent.mkdir(parents=True, exist_ok=True)
+        info: dict[str, Any] = {"generated_size": None, "pixel_size": None, "warning": None}
         try:
             from PIL import Image
         except ImportError:
             shutil.copyfile(src, dest)
-            return None
+            return info
+        target = _parse_size(size)
         with Image.open(src) as img:
-            size = img.size
-            current = (img.format or "").upper()
-            if current == _PIL_FORMAT[fmt]:
+            img.load()
+            info["generated_size"] = list(img.size)
+            out = img
+            if target and img.size != target:
+                info["warning"] = (
+                    f"Codex returned {img.size[0]}x{img.size[1]} instead of "
+                    f"{target[0]}x{target[1]}"
+                    + ("; centre-cropped and resized to the requested size"
+                       if fit == "crop" else "; kept as generated (fit=none)")
+                )
+                if fit == "crop":
+                    out = fit_to_size(img, target)
+            if out is img and (img.format or "").upper() == _PIL_FORMAT[fmt]:
                 if src.resolve() != dest.resolve():
                     shutil.copyfile(src, dest)
             else:
-                out = img.convert("RGB") if fmt == "jpeg" else img
+                if fmt == "jpeg" and out.mode not in ("RGB", "L"):
+                    out = out.convert("RGB")
                 out.save(dest, _PIL_FORMAT[fmt])
-        return size
+            info["pixel_size"] = list(out.size)
+        return info
 
     def _generate_one(
         self,
@@ -324,10 +392,13 @@ class CodexImage(BaseTool):
                     f"codex exec produced no image (exit {proc.returncode}). "
                     f"Output tail: {log_tail}"
                 )
-            pixel_size = self._finalize(produced, dest, fmt)
+            info = self._finalize(
+                produced, dest, fmt, inputs.get("size", "1024x1024"),
+                inputs.get("fit", "crop"),
+            )
         return {
             "path": str(dest),
-            "pixel_size": list(pixel_size) if pixel_size else None,
+            **info,
             "exit_code": proc.returncode,
             "log_tail": log_tail,
         }
@@ -397,6 +468,8 @@ class CodexImage(BaseTool):
                 "operation": mode,
                 "requested_size": inputs.get("size", "1024x1024"),
                 "pixel_sizes": [r["pixel_size"] for r in results],
+                "generated_sizes": [r["generated_size"] for r in results],
+                "warnings": [r["warning"] for r in results if r["warning"]],
                 "auth": login.splitlines()[0] if login else "",
                 "cost_status": "subscription",
                 "codex_log_tail": results[-1]["log_tail"],

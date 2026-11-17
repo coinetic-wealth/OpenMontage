@@ -1043,7 +1043,10 @@ It takes the same inputs as `openai_image` (prompt, size, n, output format,
 reference images, transparent background; no masks). The prompt the pipeline
 writes is handed to Codex verbatim with an instruction not to rewrite it, so
 the creative flow is unchanged and only the transport differs. Each image takes
-about a minute. The tool is available only on a machine where `codex` is
+about a minute. Codex treats the size as a request and can return another
+frame shape; by default (`fit: crop`) the tool centre-crops and resizes to the
+requested size and reports the mismatch in `warnings` (`fit: none` keeps the
+image as generated). The tool is available only on a machine where `codex` is
 installed: in CI or a cloud sandbox it reports unavailable and the selector
 uses the other image providers, so run image-generation steps on that machine
 when you want to use it.
