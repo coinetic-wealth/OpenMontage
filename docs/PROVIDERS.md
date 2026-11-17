@@ -1028,6 +1028,26 @@ Google TTS offers 700+ voices across 50+ languages. Voice names follow the patte
 | GPT Image 2 | 1024x1536 / 1536x1024 | medium | $0.041 |
 | GPT Image 2 | 1024x1536 / 1536x1024 | high | $0.165 |
 
+#### No API key: GPT Image through the Codex CLI (`codex_image`)
+
+If you have a paid ChatGPT plan, `codex_image` reaches OpenAI's image models
+through a locally installed, signed-in [Codex CLI](https://github.com/openai/codex)
+instead of the Images API. Images are paid from the ChatGPT plan's limits, so
+there is no per-image bill and no `OPENAI_API_KEY`.
+
+1. `npm install -g @openai/codex`
+2. `codex login` and choose **Sign in with ChatGPT**
+3. Optional: set `CODEX_CLI_PATH` if `codex` is not on `PATH`
+
+It takes the same inputs as `openai_image` (prompt, size, n, output format,
+reference images, transparent background; no masks). The prompt the pipeline
+writes is handed to Codex verbatim with an instruction not to rewrite it, so
+the creative flow is unchanged and only the transport differs. Each image takes
+about a minute. The tool is available only on a machine where `codex` is
+installed: in CI or a cloud sandbox it reports unavailable and the selector
+uses the other image providers, so run image-generation steps on that machine
+when you want to use it.
+
 > **Note:** DALL-E 2/3 were shut down by OpenAI on 2026-05-12, and the `gpt-image-1` family (`gpt-image-1-mini`, `gpt-image-1.5`) retires 2026-12-01 — `gpt-image-2` is OpenAI's recommended replacement ([deprecations](https://developers.openai.com/api/docs/deprecations)).
 
 **Free tier:** None. Requires prepaid billing. Previously offered $5 in free credits for new accounts (discontinued for most signups).
@@ -1571,6 +1591,7 @@ These tools require only FFmpeg or Python packages — no GPU, no API key.
 | **MiniMax direct** | `MINIMAX_API_KEY` | `minimax_image`, `minimax_video` | Pay-as-you-go |
 | **Pika** | `PIKA_API_KEY` | `pika_video` | Prepaid, per output second ($0.01–0.08/s) |
 | **OpenAI** | `OPENAI_API_KEY` | `openai_tts`, `openai_image` | Paid only |
+| **Codex CLI** (ChatGPT plan) | none (`codex login`) | `codex_image` | Included in paid ChatGPT plans, counts against plan limits |
 | **xAI** | `XAI_API_KEY` | `grok_image`, `grok_video` | Paid only |
 | **Runway** | `RUNWAY_API_KEY` | `runway_video` | Free trial + paid |
 | **Higgsfield** | `HIGGSFIELD_API_KEY` + `HIGGSFIELD_API_SECRET` | `higgsfield_video` | Subscription ($15-84/mo) |

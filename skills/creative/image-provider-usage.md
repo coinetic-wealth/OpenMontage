@@ -12,6 +12,7 @@
 | `flux_image` | FLUX 2 Pro via fal.ai | ~$0.03-0.05 | ~5-10s | Photorealism, general purpose, workhorse |
 | `grok_image` | Grok Imagine Image (xAI) | $0.02/output + $0.002/input edit image | ~5-15s | Image edits, style transfer, multi-image compositing |
 | `openai_image` | GPT Image 2 (OpenAI) | ~$0.01-0.21 | ~5-15s | Complex instructions, text in images, multi-element |
+| `codex_image` | GPT Image via a signed-in Codex CLI (ChatGPT plan) | Plan limits, no per-image bill | ~45-60s | Same strengths as `openai_image` without an API key. Only where `codex` is installed. Pass the same prompt you would give `openai_image`; never shorten it for this route |
 | `recraft_image` | Recraft V4 via fal.ai | ~$0.04-0.25 | ~5-10s | Logos, SVG vectors, brand assets, text rendering (see caveat below) |
 | `local_diffusion` | Stable Diffusion (local) | Free | ~30s+ | Offline, privacy, free |
 | `image_gen` | Multi (legacy, deprecated) | Varies | Varies | **Deprecated** — use `image_selector` or per-provider tools |
